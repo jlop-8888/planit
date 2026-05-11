@@ -21,7 +21,11 @@ import {
   Globe,
   Compass,
   Star,
-  Info
+  Info,
+  Mail,
+  User,
+  Send,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { generatePlan, PlanResponse } from './services/gemini.service';
@@ -472,6 +476,147 @@ const PlanResult = ({ plan, onReset }: { plan: PlanResponse, onReset: () => void
   );
 };
 
+const ContactSection = () => {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          message,
+          type: 'contact_form',
+          date: new Date().toISOString() 
+        }),
+      });
+
+      if (response.ok) {
+        setStatus('success');
+        setEmail('');
+        setName('');
+        setMessage('');
+      } else {
+        setStatus('error');
+      }
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <section className="py-32 px-6 bg-slate-900 text-white overflow-hidden relative">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[1000px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2"></div>
+      
+      <div className="max-w-7xl mx-auto relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+          <div>
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-black uppercase tracking-widest mb-8 border border-blue-500/20"
+            >
+              <Mail className="w-4 h-4" />
+              <span>Únete a la comunidad</span>
+            </motion.div>
+            <h2 className="text-5xl md:text-7xl font-display font-bold mb-8 leading-tight">
+              Recibe planes <span className="italic text-blue-400">exclusivos</span> cada semana.
+            </h2>
+            <p className="text-slate-400 text-xl leading-relaxed max-w-lg mb-12">
+              No enviamos spam. Solo joyas ocultas, descuentos en hoteles boutique y las mejores rutas de IA para tu próximo viaje. Envíanos un mensaje si tienes alguna duda.
+            </p>
+          </div>
+
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="bg-white/5 backdrop-blur-xl p-8 md:p-12 rounded-[3.5rem] border border-white/10 shadow-2xl"
+          >
+            {status === 'success' ? (
+              <div className="text-center py-10">
+                <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <h3 className="text-3xl font-bold mb-4">¡Mensaje enviado!</h3>
+                <p className="text-slate-400">Gracias por contactar con nosotros. Te responderemos lo antes posible.</p>
+                <button 
+                  onClick={() => setStatus('idle')}
+                  className="mt-8 text-blue-400 font-bold p-2 hover:text-blue-300 transition-colors"
+                >
+                  Enviar otro mensaje
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Nombre Completo</label>
+                  <div className="relative">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                    <input 
+                      type="text" required value={name} onChange={(e) => setName(e.target.value)}
+                      placeholder="Ej. Javier López"
+                      className="w-full bg-slate-800/50 border border-white/5 rounded-2xl py-5 pl-16 pr-6 focus:outline-none focus:border-blue-500/50 focus:bg-slate-800 transition-all text-lg"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Correo Electrónico</label>
+                  <div className="relative">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                    <input 
+                      type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="javier@ejemplo.com"
+                      className="w-full bg-slate-800/50 border border-white/5 rounded-2xl py-5 pl-16 pr-6 focus:outline-none focus:border-blue-500/50 focus:bg-slate-800 transition-all text-lg"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-4">Tu Mensaje</label>
+                  <div className="relative">
+                    <textarea 
+                      required value={message} onChange={(e) => setMessage(e.target.value)}
+                      placeholder="Cuéntanos qué tienes en mente..."
+                      rows={4}
+                      className="w-full bg-slate-800/50 border border-white/5 rounded-2xl py-5 px-6 focus:outline-none focus:border-blue-500/50 focus:bg-slate-800 transition-all text-lg resize-none"
+                    />
+                  </div>
+                </div>
+                <button 
+                  disabled={status === 'loading'}
+                  className="w-full py-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-black uppercase tracking-widest rounded-2xl text-lg transition-all flex items-center justify-center gap-4 shadow-xl shadow-blue-500/20"
+                >
+                  {status === 'loading' ? (
+                    <>Enviando... <Loader2 className="w-6 h-6 animate-spin" /></>
+                  ) : (
+                    <>Enviar Mensaje <Send className="w-5 h-5" /></>
+                  )}
+                </button>
+                {status === 'error' && (
+                  <p className="text-red-400 text-sm text-center font-bold">Ocurrió un error. Por favor, inténtalo de nuevo.</p>
+                )}
+                <p className="text-[10px] text-center text-slate-500 uppercase tracking-widest mt-6">
+                  Al contactarnos aceptas nuestra política de privacidad
+                </p>
+              </form>
+            )}
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 export default function App() {
   const [state, setState] = useState<AppState>('landing');
   const [plan, setPlan] = useState<PlanResponse | null>(null);
@@ -522,6 +667,7 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
             >
               <Hero onStart={handleStart} onSelectCity={handleSelectCity} />
+              <ContactSection />
             </motion.div>
           )}
 
@@ -549,6 +695,9 @@ export default function App() {
               className="pt-32 pb-20"
             >
               <PlanResult plan={plan} onReset={handleReset} />
+              <div className="mt-20">
+                <ContactSection />
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
